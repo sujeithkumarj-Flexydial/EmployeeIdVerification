@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 // Mock Employee Database (GET /check-employee)
-const employeeDatabase = ['EMP001', 'EMP002', 'EMP123', 'EMP999'];
+const employeeDatabase = ['000010', '000011', '000013', '000014','000015','000016' ];
 
 // Mock Receipts Table (7 Sample Records)
 const mockReceiptsDatabase = {
@@ -108,7 +108,7 @@ app.get('/check-employee', (req, res) => {
 
 // 2. Get Receipts Endpoint (POST - Body containing finReference)
 app.post('/get-receipts', (req, res) => {
-    const { finReference } = req.body;
+    const { messageId, finReference } = req.body;
 
     if (!finReference) {
         return res.status(400).json({
@@ -119,7 +119,7 @@ app.post('/get-receipts', (req, res) => {
         });
     }
 
-    // Direct lookup by finReference
+    // Lookup receipt data using finReference alone (messageId is received but ignored)
     const receipts = mockReceiptsDatabase[String(finReference).trim()] || [];
 
     return res.status(200).json({
@@ -131,7 +131,6 @@ app.post('/get-receipts', (req, res) => {
         }
     });
 });
-
 // Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
