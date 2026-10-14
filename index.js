@@ -3,10 +3,14 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
+
+// Middleware to parse JSON body payloads
 app.use(express.json());
 
-// Mock Database for testing (Add or change IDs as needed)
-const employeeDatabase = ['000001', '000002', '000093', '000121','000027','0000033','090909'];
+// Mock Employee Database (GET /check-employee)
+const employeeDatabase = ['EMP001', 'EMP002', 'EMP123', 'EMP999'];
+
+// Mock Receipts Table (7 Sample Records)
 const mockReceiptsDatabase = {
     "HLHMUMB00000054": [
         {
@@ -86,42 +90,38 @@ const mockReceiptsDatabase = {
         }
     ]
 };
-// IVR Endpoint: GET /check-employee?id=EMP001
+
+// 1. Employee Check Endpoint (GET)
 app.get('/check-employee', (req, res) => {
-    const empId = req.query.id || req.body?.id;
+    const empId = req.query.id;
 
     if (!empId) {
-        return res.status(400).send('no');
-    }
-
-    // Check if ID exists in array (case-insensitive & trimmed)
-    const exists = employeeDatabase.some(
-        (id) => id.toLowerCase() === empId.trim().toLowerCase()
-    );
-
-    if (exists) {
-        return res.status(200).send('yes');
-    } else {
         return res.status(200).send('no');
     }
-});
-app.get('/get-receipts', (req, res) => {
-    const { messageId, finReference } = req.query;
 
-    // Validate parameters
-    if (!messageId || !finReference) {
+    const exists = employeeDatabase.some(
+        (id) => id.toLowerCase() === String(empId).trim().toLowerCase()
+    );
+
+    return res.status(200).send(exists ? 'yes' : 'no');
+});
+
+// 2. Get Receipts Endpoint (POST - Body containing finReference)
+app.post('/get-receipts', (req, res) => {
+    const { finReference } = req.body;
+
+    if (!finReference) {
         return res.status(400).json({
             statusCode: "400",
             responseId: "err-" + Date.now(),
-            message: "Missing required parameters: messageId and finReference are required",
+            message: "Missing required parameter in body: finReference",
             results: { receipts: [] }
         });
     }
 
-    // Lookup receipts for the given finReference
-    const receipts = mockReceiptsDatabase[finReference] || [];
+    // Direct lookup by finReference
+    const receipts = mockReceiptsDatabase[String(finReference).trim()] || [];
 
-    // Return matched response structure
     return res.status(200).json({
         statusCode: "200",
         responseId: "d98b80e0-c79c-11f1-b683-" + Math.floor(100000000000 + Math.random() * 900000000000),
@@ -131,6 +131,7 @@ app.get('/get-receipts', (req, res) => {
         }
     });
 });
+
 // Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
